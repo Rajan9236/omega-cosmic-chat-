@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Omega Cosmic Chat with AI</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0a0a0f, #1a1a2f);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      backdrop-filter: blur(15px);
+      margin-bottom: 20px;
+    }
+
+    .chat-box {
+      height: 300px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 10px;
+      overflow-y: scroll;
+      margin-bottom: 10px;
+    }
+
+    .message {
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 8px;
+    }
+
+    .user-message {
+      background: #00f7ff;
+      color: black;
+      margin-left: 20%;
+      margin-right: 5px;
+      text-align: right;
+    }
+
+    .ai-message, .other-message {
+      background: #ff9500;
+      color: white;
+      margin-right: 20%;
+      margin-left: 5px;
+    }
+
+    .input-box {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #00f7ff;
+      border-radius: 10px;
+      background: transparent;
+      color: white;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #00f7ff;
+      color: black;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #ff9500;
+      color: white;
+      transform: scale(1.05);
+    }
+
+    .donation-options {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .donate-btn {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .donate-btn:hover {
+      background: #ff6666;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <h2>Omega Cosmic Chat with AI 🌌</h2>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="input-box">
+      <input type="text" id="messageInput" placeholder="Type your message..." />
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="connectToUser()">Connect to User</button>
+      <button onclick="connectToAI()">Chat with AI</button>
+    </div>
+  </div>
+
+  <div class="donation-options">
+    <a href="upi://pay?pa=gautamrajan377@okicici&pn=RajanTrollMaster&am=5&cu=INR&tn=SupportOmegaCosmicChat">
+      <button class="donate-btn">Donate ₹5</button>
+    </a>
+    <a href="upi://pay?pa=gautamrajan377@okicici&pn=RajanTrollMaster&am=10&cu=INR&tn=SupportOmegaCosmicChat">
+      <button class="donate-btn">Donate ₹10</button>
+    </a>
+    <a href="upi://pay?pa=gautamrajan377@okicici&pn=RajanTrollMaster&am=20&cu=INR&tn=SupportOmegaCosmicChat">
+      <button class="donate-btn">Donate ₹20</button>
+    </a>
+  </div>
+
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  <script>
+    const socket = io('https://your-heroku-app.herokuapp.com'); // Heroku URL daal do
+    const chatBox = document.getElementById('chatBox');
+    const messageInput = document.getElementById('messageInput');
+    let isAIChat = false;
+
+    socket.on('connect', () => {
+      console.log('Connected to server');
+    });
+
+    socket.on('message', (data) => {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = data.type === 'user' ? 'user-message message' : 'other-message message';
+      messageDiv.textContent = data.message;
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    socket.on('ai-message', (message) => {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'ai-message message';
+      messageDiv.textContent = message;
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    function sendMessage() {
+      const message = messageInput.value.trim();
+      if (message) {
+        if (isAIChat) {
+          socket.emit('ai-chat', message);
+        } else {
+          socket.emit('chat', { type: 'user', message });
+        }
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'user-message message';
+        messageDiv.textContent = message;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        messageInput.value = '';
+      }
+    }
+
+    function connectToUser() {
+      isAIChat = false;
+      socket.emit('join');
+      chatBox.innerHTML = '<div class="message">Looking for a user...</div>';
+    }
+
+    function connectToAI() {
+      isAIChat = true;
+      chatBox.innerHTML = '<div class="ai-message message">Hello! I am your Cosmic AI! 🌌 How can I help you?</div>';
+    }
+
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
